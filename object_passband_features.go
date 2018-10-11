@@ -35,7 +35,7 @@ func (bfr *BrightFaintRatio) Update(row tuna.Row) error {
 func (bfr BrightFaintRatio) Collect() <-chan tuna.Row {
 	c := make(chan tuna.Row)
 	go func() {
-		c <- tuna.Row{"bfr": strconv.FormatFloat(bfr.bss/(bfr.fss+1), 'f', -1, 64)}
+		c <- tuna.Row{"flux_bfr": strconv.FormatFloat(bfr.bss/(bfr.fss+1), 'f', -1, 64)}
 		close(c)
 	}()
 	return c

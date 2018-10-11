@@ -2,17 +2,16 @@ import pandas as pd
 
 
 files = {
-    'naive_benchmark.csv.gz': 1,
-    'naive_benchmark.csv': 1
+    '0.073_0.025_0.852_0.043.csv.gz': 1,
+    '0.072_0.028_0.839_0.035.csv.gz': 1
 }
 
-subs = {file: pd.read_csv(file, index_col=0) for file in files}
+subs = {file: pd.read_csv(file).set_index('object_id') for file in files}
 
 blend = subs[list(subs.keys())[0]].copy()
 blend[:] = 0
 
 for sub in subs.values():
-    print(sub.head())
     blend += sub
 blend /= len(subs)
 

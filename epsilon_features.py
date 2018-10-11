@@ -8,7 +8,9 @@ References:
 
 import csv
 import collections
+from concurrent import futures
 import contextlib
+import copy
 import itertools
 
 import astropy.stats as stats
@@ -18,44 +20,13 @@ import tqdm
 import upsilon
 
 
-def calc_period(time, flux, flux_err):
-    if len(flux) < 3:
-        return -1
-    frequency, power = stats.LombScargle(time, flux, flux_err).autopower(nyquist_factor=20)
-    return frequency[power.argmax()]
-
-
-def calc_shapiro_w(flux):
-    if len(flux) < 3:
-        return -1
-    w, _ = shapiro(flux)
-    return w
-
-
-def calc_q1_q3_delta(flux):
-    if len(flux) < 3:
-        return -1
-    q1, q3 = np.percentile(flux, [25, 75])
-    return q3 - q1
-
-
-FEATURES = {
-    'period': lambda t, y, dy: calc_period(t, y, dy),
-    'shapiro_w': lambda t, y, dy: calc_shapiro_w(y),
-    'q1_q3_delta': lambda t, y, dy: calc_q1_q3_delta(y),
-}
-
-
-def get_features(t, y, dy):
-    t = np.array(t)
-    y = np.array(y)
-    dy = np.array(dy)
+def make_features(t, y, dy):
     try:
         e_features = upsilon.ExtractFeatures(t, y, dy, n_threads=8)
         e_features.run()
         return e_features.get_features()
     except (TypeError, ValueError):
-        return {}
+        return None
 
 
 def main():
@@ -63,7 +34,7 @@ def main():
     with contextlib.ExitStack() as stack:
         train = stack.enter_context(open('data/training_set.csv', 'r'))
         test = stack.enter_context(open('data/test_set.csv', 'r'))
-        file = stack.enter_context(open('data/features/object_passband.csv', 'w'))
+        file = stack.enter_context(open('data/features/epsilon.csv', 'w'))
 
         # The data is stored in multiple dictionaries where each key is a passband
         times = collections.defaultdict(list)
@@ -71,30 +42,31 @@ def main():
         errors = collections.defaultdict(list)
 
         object_id = None
-
-        writer = None
+        writer = csv.DictWriter(
+            file,
+            fieldnames=['object_id', 'passband', 'amplitude', 'cusum', 'eta', 'hl_amp_ratio',
+                        'kurtosis', 'n_points', 'period', 'period_SNR', 'period_log10FAP',
+                        'period_uncertainty', 'phase_cusum', 'phase_eta', 'phi21', 'phi31',
+                        'quartile31', 'r21', 'r31', 'shapiro_w', 'skewness', 'slope_per10',
+                        'slope_per90', 'stetson_k', 'weighted_mean', 'weighted_std']
+        )
+        writer.writeheader()
 
         for row in tqdm.tqdm(itertools.chain(csv.DictReader(train), csv.DictReader(test))):
 
             # Check to see if we've collected all the data pertaining to the current object
             if object_id and object_id != row['object_id']:
 
-                # Compute and save features
                 for passband in fluxes:
-
-                    t = np.array(times[passband])
-                    y = np.array(fluxes[passband])
-                    dy = np.array(errors[passband])
-                    features = get_features(t, y, dy)
-
-                    if writer is None:
-                        writer = csv.DictWriter(file, fieldnames=['object_id', 'passband'] + list(features.keys()))
-                        writer.writeheader()
-
-                    writer.writerow(dict(
-                        **{'object_id': object_id, 'passband': passband},
-                        **features
-                    ))
+                    t = times[passband]
+                    y = fluxes[passband]
+                    dy = errors[passband]
+                    features = make_features(t, y, dy)
+                    if features:
+                        writer.writerow(dict(
+                            **{'object_id': object_id, 'passband': passband},
+                            **features
+                        ))
 
                 # Reset the data and move to the next object
                 times = collections.defaultdict(list)
@@ -109,17 +81,17 @@ def main():
             fluxes[row['passband']].append(float(row['flux']))
             errors[row['passband']].append(float(row['flux_err']))
 
-        # Let's not forget the last (object_id, fluxes) pair
+        # Let's not forget the last object
         for passband in fluxes:
-            t = np.array(times[passband])
-            y = np.array(fluxes[passband])
-            dy = np.array(errors[passband])
-            features = get_features(t, y, dy)
-
-            writer.writerow(dict(
-                **{'object_id': object_id, 'passband': passband},
-                **features
-            ))
+            t = times[passband]
+            y = fluxes[passband]
+            dy = errors[passband]
+            features = make_features(t, y, dy)
+            if features:
+                writer.writerow(dict(
+                    **{'object_id': object_id, 'passband': passband},
+                    **features
+                ))
 
 
 if __name__ == '__main__':
