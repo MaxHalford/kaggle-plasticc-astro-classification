@@ -125,6 +125,8 @@ func calcObjectPassbandFeatures() {
 						tuna.NewSkew("flux"),
 						// Flux kurtosis by (object_id, passband)
 						tuna.NewKurtosis("flux"),
+						// Flux quantiles by (object_id, passband)
+						tuna.NewQuantile("flux", 0.01, []float64{0.25, 0.5, 0.75}),
 						// Flux error mean by (object_id, passband)
 						tuna.NewMean("flux_err"),
 						// Flux error min by (object_id, passband)
@@ -137,35 +139,27 @@ func calcObjectPassbandFeatures() {
 						tuna.NewSkew("flux_err"),
 						// Flux kurtosis by (object_id, passband)
 						tuna.NewKurtosis("flux_err"),
-						// Flux difference mean by (object_id, passband)
+						// Flux differences by (object_id, passband)
 						tuna.NewDiff(
 							"flux",
-							func(s string) tuna.Extractor { return tuna.NewMean(s) },
-						),
-						// Flux difference min by (object_id, passband)
-						tuna.NewDiff(
-							"flux",
-							func(s string) tuna.Extractor { return tuna.NewMin(s) },
-						),
-						// Flux difference max by (object_id, passband)
-						tuna.NewDiff(
-							"flux",
-							func(s string) tuna.Extractor { return tuna.NewMax(s) },
-						),
-						// Flux difference PTP by (object_id, passband)
-						tuna.NewDiff(
-							"flux",
-							func(s string) tuna.Extractor { return tuna.NewPTP(s) },
-						),
-						// Flux difference skew by (object_id, passband)
-						tuna.NewDiff(
-							"flux",
-							func(s string) tuna.Extractor { return tuna.NewSkew(s) },
-						),
-						// Flux difference kurtosis by (object_id, passband)
-						tuna.NewDiff(
-							"flux",
-							func(s string) tuna.Extractor { return tuna.NewKurtosis(s) },
+							func(s string) tuna.Extractor {
+								return tuna.NewUnion(
+									// Bright/faint ratio by (object_id, passband)
+									&BrightFaintRatio{},
+									// Flux mean by (object_id, passband)
+									tuna.NewMean("flux"),
+									// Flux min by (object_id, passband)
+									tuna.NewMin("flux"),
+									// Flux max by (object_id, passband)
+									tuna.NewMax("flux"),
+									// Flux PTP by (object_id, passband)
+									tuna.NewPTP("flux"),
+									// Flux skew by (object_id, passband)
+									tuna.NewSkew("flux"),
+									// Flux kurtosis by (object_id, passband)
+									tuna.NewKurtosis("flux"),
+								)
+							},
 						),
 					)
 				},
