@@ -1,6 +1,5 @@
 import itertools
 
-from cesium import featurize
 import pandas as pd
 import numpy as np
 from scipy import stats
@@ -49,21 +48,6 @@ def diff_stats(x):
     }
 
 
-CESIUM_FEATURES = ['max_slope', 'period_fast', 'percent_beyond_1_std', 'stetson_k',
-                   'weighted_average']
-
-
-def cesium(df):
-    features = featurize.featurize_time_series(
-        times=df['mjd'].values,
-        values=df['flux'].values,
-        errors=df['flux_err'].values,
-        features_to_use=CESIUM_FEATURES
-    )
-    features.columns = CESIUM_FEATURES
-    return features.iloc[0]
-
-
 AGGS = {
     'flux_counts': lambda df: df.groupby(['object_id', 'passband'])['flux'].agg([
         ('flux_count', len),
@@ -106,7 +90,25 @@ AGGS = {
         ('flux_tra', lambda x: ts.time_reversal_asymmetry_statistic(x, lag=1)),
         ('flux_shapiro_w', lambda x: lambda x: stats.shapiro(x)[0])
     ]),
-    'cesium': lambda df: df.groupby(['object_id', 'passband']).apply(cesium)
+    'object_stats': lambda df: df.groupby('object_id').agg({
+        'flux': [
+            ('mean', 'mean'),
+            ('median', 'median'),
+            ('min', 'min'),
+            ('max', 'max'),
+            ('std', 'std'),
+            ('skew', lambda x: stats.skew(x, bias=False)),
+            ('kurtosis', lambda x: stats.kurtosis(x, bias=False))
+        ],
+        'detected': [
+            ('mean', 'mean')
+        ]
+    }),
+    'object_detected': lambda df: df.groupby(['object_id', 'detected'])['mjd'].agg([
+        ('mjd_ptp', np.ptp),
+        ('mjd_min', np.min),
+        ('mjd_max', np.max)
+    ])
 }
 
 def stream_groupby_csv(path, key, agg, chunk_size=1e6):
@@ -156,7 +158,9 @@ def main():
         # Compute the features
         print(f'Making {name}...')
         features = stream_groupby_csv(path=paths, key='object_id', agg=agg, chunk_size=1e6)
-        features = features.unstack()
+
+        if isinstance(features.index, pd.MultiIndex):
+            features = features.unstack()
 
         names = features.columns.get_level_values(0)
         passbands = features.columns.get_level_values(1)
