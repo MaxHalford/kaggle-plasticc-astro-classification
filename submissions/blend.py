@@ -2,8 +2,8 @@ import pandas as pd
 
 
 files = {
-    '0.170_0.042_1.143_0.047.csv.gz': 1,
-    '0.187_0.053_1.228_0.039.csv.gz': 1
+    'lol_0.095_0.034_1.041_0.032.csv.gz': 1,
+    'lol_0.131_0.037_1.072_0.040.csv.gz': 1
 }
 
 subs = {file: pd.read_csv(file).set_index('object_id') for file in files}
