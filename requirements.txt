@@ -1,2 +1,0 @@
-lightgbm==2.2.1
-tsfresh==0.11.1
