@@ -4,8 +4,9 @@ import pandas as pd
 blend = None
 
 files = {
-    '0.058_0.044_0.791_0.028_scirpus.csv.gz': 1,
-    'single_subm_0.654771_2018-11-20-04-44.csv': 1
+    'predictions_901.csv': 1,
+    'predictions.csv': 1,
+    'single_lgb_submission_bz_14_unk.zip': 1,
 }
 
 for file, weight in files.items():
@@ -13,9 +14,9 @@ for file, weight in files.items():
     if blend is None:
         blend = weight * sub
     else:
-        blend += weight * sub
+        blend *= weight * sub
 
-blend /= sum(files.values())
+blend **= 1 / len(files)
 
 def GenUnknown(data):
     return ((((((data["mymedian"]) + (((data["mymean"]) / 2.0)))/2.0)) + (((((1.0) - (((data["mymax"]) * (((data["mymax"]) * (data["mymax"]))))))) / 2.0)))/2.0)

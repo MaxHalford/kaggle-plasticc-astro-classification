@@ -10,7 +10,7 @@ def main():
     df = pd.concat(
         (
             pd.read_csv('~/projects/kaggle-plasticc-astro-classification/data/kaggle/training_set_metadata.csv'),
-            pd.read_csv('~/projects/kaggle-plasticc-astro-classification/data/kaggle/test_set_metadata.csv')
+            #pd.read_csv('~/projects/kaggle-plasticc-astro-classification/data/kaggle/test_set_metadata.csv')
         ),
         ignore_index=True,
         sort=False

@@ -1,14 +1,3 @@
-    <div align="center">
-    <img src="https://schulzmuseum.org/wp-content/uploads/2013/10/StarryStarry.png" />
-</div>
+# Kaggle PLAsTiCC 22nd place
 
-- Train loss: 0.003 (±0.004)
-- Valid loss: 0.058 (±0.044)
-- Train loss: 0.399 (±0.008)
-- Valid loss: 0.791 (±0.028)
-
-To do:
-    [ ] try a lightgbm with all the data
-    [ ] blend the full lightgbm with the separate one
-    [ ] take features from [here](https://www.kaggle.com/iprapas/ideas-from-kernels-and-discussion-lb-1-135/notebook)
-
+This was my solution to the [PLAsTiCC Astronomical Classification challenge](https://www.kaggle.com/c/PLAsTiCC-2018/) on Kaggle. I ended at 22nd place with my team, called "WTFlux". Our ranking was quite high, but the score we got (0.86805) was from the best (0.68503) and so I didn't bother to nicely package my solution. The code should be quite clear, though. On a personal level the competition was interesting because I created a tool to extract aggregate features from large datasets, called [tuna](https://github.com/MaxHalford/tuna/).

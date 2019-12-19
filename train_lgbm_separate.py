@@ -74,6 +74,10 @@ import pandas as pd
 train = pd.read_feather('data/train.fth').set_index('object_id')
 test = pd.read_feather('data/test.fth').set_index('object_id')
 
+for f in ['ratio', 'width']:
+    train = train.join(pd.read_hdf(f'data/iprapas/{f}_train.h5'), on='object_id')
+    test = test.join(pd.read_hdf(f'data/iprapas/{f}_test.h5'), on='object_id')
+
 X_train = train.drop(columns='target')
 y_train = train['target']
 X_test = test
@@ -126,7 +130,7 @@ params = {
     'verbosity': -1,
 }
 
-cv = model_selection.KFold(n_splits=5, shuffle=True, random_state=42)
+cv = model_selection.StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 feature_importances = pd.DataFrame(index=X_train_gal.columns)
 gal_fit_scores = np.zeros(cv.n_splits)
 gal_val_scores = np.zeros(cv.n_splits)
@@ -165,9 +169,9 @@ for i, (fit_idx, val_idx) in enumerate(cv.split(X_train_gal, y_train_gal)):
     feature_importances[f'split_{i}'] = model.feature_importance('split')
 
     # Store the predictions
-    y_pred = pd.DataFrame(softmax(model.predict(X_test_gal)), index=X_test_gal.index)
-    y_pred.columns = y_pred.columns.map(int_to_class)
-    submission.loc[y_pred.index, y_pred.columns] += y_pred / cv.n_splits
+    #y_pred = pd.DataFrame(softmax(model.predict(X_test_gal)), index=X_test_gal.index)
+    #y_pred.columns = y_pred.columns.map(int_to_class)
+    #submission.loc[y_pred.index, y_pred.columns] += y_pred / cv.n_splits
 
     # Store the scores
     gal_fit_scores[i] = evals_result['fit']['loss'][model.best_iteration - 1]
@@ -209,7 +213,7 @@ params = {
     'verbosity': -1,
 }
 
-cv = model_selection.KFold(n_splits=5, shuffle=True, random_state=42)
+cv = model_selection.StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 feature_importances = pd.DataFrame(index=X_train_ex.columns)
 ex_fit_scores = np.zeros(cv.n_splits)
 ex_val_scores = np.zeros(cv.n_splits)
@@ -248,9 +252,9 @@ for i, (fit_idx, val_idx) in enumerate(cv.split(X_train_ex, y_train_ex)):
     feature_importances[f'split_{i}'] = model.feature_importance('split')
 
     # Store the predictions
-    y_pred = pd.DataFrame(softmax(model.predict(X_test_ex.values)), index=X_test_ex.index)
-    y_pred.columns = y_pred.columns.map(int_to_class)
-    submission.loc[y_pred.index, y_pred.columns] += y_pred / cv.n_splits
+    #y_pred = pd.DataFrame(softmax(model.predict(X_test_ex.values)), index=X_test_ex.index)
+    #y_pred.columns = y_pred.columns.map(int_to_class)
+    #submission.loc[y_pred.index, y_pred.columns] += y_pred / cv.n_splits
 
     # Store the scores
     ex_fit_scores[i] = evals_result['fit']['loss'][model.best_iteration - 1]

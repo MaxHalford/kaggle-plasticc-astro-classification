@@ -120,7 +120,17 @@ def avg_double_to_single_step(df):
 # My best model has hard time separating classes 42, 52, and to some extent, 67 and 90.
 # Separating these classes is the key to winning the competition, more than class 99 IMHO.
 
+from scipy import stats
+
+def detected_lr(g):
+    d = g.query('detected == True')
+    slope, *_ = stats.linregress(d['mjd'], d['flux'])
+    return slope
+
+
 AGGS = [
+    Agg(on=['flux', 'mjd', 'detected'], by='object_id', how=detected_lr),
+
     Agg(on='flux', by='object_id', how='mean'),
     Agg(on='flux', by=['object_id', 'passband'], how='mean'),
     Agg(on='flux', by=['object_id', 'passband'], how='std'),
@@ -179,7 +189,7 @@ def main():
 
     paths = [
         '~/projects/kaggle-plasticc-astro-classification/data/kaggle/training_set.csv',
-        '~/projects/kaggle-plasticc-astro-classification/data/kaggle/test_set.csv'
+        #'~/projects/kaggle-plasticc-astro-classification/data/kaggle/test_set.csv'
     ]
 
     keys = set()
